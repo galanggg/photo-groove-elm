@@ -2,7 +2,7 @@ module PhotoGroove exposing (main)
 
 import Array exposing (Array)
 import Browser
-import Html exposing (div, h1, img, p, text)
+import Html exposing (Html, button, div, h1, h3, img, input, label, p, small, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
@@ -11,6 +11,7 @@ type alias Model =
     { photos : List Photo
     , selectedImage : String
     , selectedText : String
+    , chosenSize : ThumbnailSize
     }
 
 
@@ -18,23 +19,59 @@ type alias Photo =
     { url : String, desc : String }
 
 
+type alias Msg =
+    { description : String, data : String }
+
+
+type ThumbnailSize
+    = Small
+    | Medium
+    | Large
+
+
+type Maybe value
+    = Just value
+    | Nothing
+
+
 urlPrefix : String
 urlPrefix =
     "http://elm-in-action.com/"
 
 
+getPhotoUrl : Int -> String
+getPhotoUrl index =
+    case Array.get index photoArray of
+        Just photo ->
+            photo.url
+
+        Nothing ->
+            ""
+
+
 update msg model =
-    if msg.description == "ClickedPhoto" then
-        { model | selectedImage = msg.data, selectedText = msg.data }
+    case msg.description of
+        "ClickedPhoto" ->
+            { model | selectedImage = msg.data, selectedText = msg.data }
 
-    else
-        model
+        "ClickSurprise" ->
+            { model | selectedImage = "2.jpeg" }
+
+        _ ->
+            model
 
 
+view : Model -> Html Msg
 view model =
     div [ class "content" ]
         [ h1 [] [ text "Photo Groove" ]
-        , div [ id "thumbnails" ]
+        , button
+            [ onClick { description = "ClickSurprise", data = "" } ]
+            [ text "Random !" ]
+        , h3 [] [ text "Thumbnail Size: " ]
+        , div [ id "choose-size" ]
+            (List.map viewSizeChooser [ Small, Medium, Large ])
+        , div [ id "thumbnails", class (sizeToString model.chosenSize) ]
             (List.map
                 (viewThumbnail model.selectedImage model.selectedText)
                 model.photos
@@ -48,6 +85,7 @@ view model =
         ]
 
 
+viewThumbnail : String -> String -> Photo -> Html Msg
 viewThumbnail selectedUrl selectedText thumb =
     div []
         [ img
@@ -58,6 +96,27 @@ viewThumbnail selectedUrl selectedText thumb =
             []
         , h1 [ onClick { description = "ClickedPhoto", data = thumb.desc } ] []
         ]
+
+
+viewSizeChooser : ThumbnailSize -> Html Msg
+viewSizeChooser size =
+    label []
+        [ input [ type_ "radio", name "size" ] []
+        , text (sizeToString size)
+        ]
+
+
+sizeToString : ThumbnailSize -> String
+sizeToString size =
+    case size of
+        Small ->
+            "small"
+
+        Medium ->
+            "medium"
+
+        Large ->
+            "large"
 
 
 photoArray : Array Photo
@@ -74,6 +133,7 @@ initialModel =
         ]
     , selectedImage = "1.jpeg"
     , selectedText = "gambar1"
+    , chosenSize = Medium
     }
 
 
