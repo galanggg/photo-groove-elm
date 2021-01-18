@@ -23,6 +23,7 @@ type Msg
     = ClickedPhoto String
     | ClickedSize ThumbnailSize
     | ClickedSurprise
+    | GotSelectedIndex Int
 
 
 type ThumbnailSize
@@ -31,36 +32,40 @@ type ThumbnailSize
     | Large
 
 
-type Maybe value
-    = Just value
-    | Nothing
-
-
 urlPrefix : String
 urlPrefix =
     "http://elm-in-action.com/"
 
 
-
--- getPhotoUrl : Int -> String
--- getPhotoUrl index =
---     case Array.get index photoArray of
---         Just photo ->
---             photo.url
---         Nothing ->
---             ""
+photoArray : Array Photo
+photoArray =
+    Array.fromList initialModel.photos
 
 
+getPhotoUrl : Int -> String
+getPhotoUrl index =
+    case Array.get index photoArray of
+        Just photo ->
+            photo.url
+
+        Nothing ->
+            ""
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedPhoto url ->
-            { model | selectedImage = url }
+            ( { model | selectedImage = url }, Cmd.none )
 
         ClickedSize size ->
-            { model | chosenSize = size }
+            ( { model | chosenSize = size }, Cmd.none )
 
         ClickedSurprise ->
-            { model | selectedImage = "2.jpeg" }
+            ( model, Random.generate GotSelectedIndex randomPhotoPicker )
+
+        GotSelectedIndex index ->
+            ( { model | selectedImage = getPhotoUrl index }, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -119,11 +124,6 @@ sizeToString size =
             "large"
 
 
-photoArray : Array Photo
-photoArray =
-    Array.fromList initialModel.photos
-
-
 randomPhotoPicker : Random.Generator Int
 randomPhotoPicker =
     Random.int 0 (Array.length photoArray - 1)
@@ -141,9 +141,11 @@ initialModel =
     }
 
 
+main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = initialModel
+    Browser.element
+        { init = \flags -> ( initialModel, Cmd.none )
         , view = view
         , update = update
+        , subscriptions = \model -> Sub.none
         }
