@@ -2,15 +2,21 @@ module PhotoGroove exposing (main)
 
 import Array exposing (Array)
 import Browser
+import Browser.Dom exposing (Error)
 import Html exposing (Html, button, div, h1, h3, img, input, label, p, small, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Random
 
 
+type Status
+    = Loading
+    | Loaded (List Photo) String
+    | Errored String
+
+
 type alias Model =
-    { photos : List Photo
-    , selectedImage : String
+    { status : Status
     , chosenSize : ThumbnailSize
     }
 
@@ -23,13 +29,17 @@ type Msg
     = ClickedPhoto String
     | ClickedSize ThumbnailSize
     | ClickedSurprise
-    | GotSelectedIndex Int
+    | GotRandomPhoto Photo
 
 
 type ThumbnailSize
     = Small
     | Medium
     | Large
+
+
+
+-- The url prefix
 
 
 urlPrefix : String
@@ -52,43 +62,76 @@ getPhotoUrl index =
             ""
 
 
+selectUrl : String -> Status -> Status
+selectUrl url status =
+    case status of
+        Loaded photos _ ->
+            Loaded photos url
+
+        Loading ->
+            status thought
+
+        Errored errorMessage ->
+            status
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedPhoto url ->
-            ( { model | selectedImage = url }, Cmd.none )
+            ( { model | status = selectUrl url model.status }, Cmd.none )
 
         ClickedSize size ->
             ( { model | chosenSize = size }, Cmd.none )
 
         ClickedSurprise ->
-            ( model, Random.generate GotSelectedIndex randomPhotoPicker )
+            case model.status of
+                Loaded (firstPhoto :: otherPhoto) _ ->
+                    Random.uniform firstPhoto otherPhoto
+                        |> Random.generate GotRandomPhoto
+                        |> Tuple.pair model
 
-        GotSelectedIndex index ->
-            ( { model | selectedImage = getPhotoUrl index }, Cmd.none )
+                Loading ->
+                    ( model, Cmd.none )
+
+                Errored errorMessage ->
+                    ( model, Cmd.none )
 
 
 view : Model -> Html Msg
 view model =
-    div [ class "content" ]
-        [ h1 [] [ text "Photo Groove" ]
-        , button
-            [ onClick ClickedSurprise ]
-            [ text "Random !" ]
-        , h3 [] [ text "Thumbnail Size: " ]
-        , div [ id "choose-size" ]
-            (List.map viewSizeChooser [ Small, Medium, Large ])
-        , div [ id "thumbnails", class (sizeToString model.chosenSize) ]
-            (List.map
-                (viewThumbnail model.selectedImage)
-                model.photos
-            )
-        , img
-            [ class "large"
-            , src (urlPrefix ++ "large/" ++ model.selectedImage)
-            ]
-            []
+    div [ class "content" ] <|
+        case model.status of
+            Loaded photos selectedImage ->
+                viewLoaded photos selectedImage model.chosenSize
+
+            Loading ->
+                []
+
+            Errored errorMessage ->
+                [ text ("Error : " ++ errorMessage) ]
+
+
+viewLoaded : List Photo -> String -> ThumbnailSize -> List (Html Msg)
+viewLoaded photos selectedImage chosenSize =
+    [ h1 [] [ text "Photo Groove" ]
+    , button
+        [ onClick ClickedSurprise ]
+        [ text "Random !" ]
+    , h3 [] [ text "Thumbnail Size: " ]
+    , div [ id "choose-size" ]
+        (List.map viewSizeChooser [ Small, Medium, Large ])
+    , div [ id "thumbnails", class (sizeToString chosenSize) ]
+        (List.map
+            (viewThumbnail selectedImage)
+            photos
+        )
+    , img
+        [ class "large"
+        , src (urlPrefix ++ "large/" ++ selectedImage)
         ]
+        []
+    ]
 
 
 viewThumbnail : String -> Photo -> Html Msg
@@ -131,12 +174,7 @@ randomPhotoPicker =
 
 initialModel : Model
 initialModel =
-    { photos =
-        [ { url = "1.jpeg" }
-        , { url = "2.jpeg" }
-        , { url = "3.jpeg" }
-        ]
-    , selectedImage = "1.jpeg"
+    { status = Loading
     , chosenSize = Medium
     }
 
