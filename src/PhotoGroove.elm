@@ -3,12 +3,13 @@ module PhotoGroove exposing (main)
 import Array exposing (Array)
 import Browser
 import Browser.Dom exposing (Error)
-import Html exposing (Html, button, div, h1, h3, img, input, label, p, small, text)
+import Html exposing (Attribute, Html, button, div, h1, h3, img, input, label, p, small, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (Decoder, bool, int, list, string, succeed)
 import Json.Decode.Pipeline exposing (optional, required)
+import Json.Encode as Encode
 import Platform.Sub exposing (Sub)
 import Random
 
@@ -50,6 +51,11 @@ viewLoaded photos selectedImage chosenSize =
     , button
         [ onClick ClickedSurprise ]
         [ text "Random !" ]
+    , div [ class "filters" ]
+        [ viewFilter "Hue" 0
+        , viewFilter "Ripple" 0
+        , viewFilter "Noise" 0
+        ]
     , h3 [] [ text "Thumbnail Size: " ]
     , div [ id "choose-size" ]
         (List.map viewSizeChooser [ Small, Medium, Large ])
@@ -82,6 +88,19 @@ viewSizeChooser size =
     label []
         [ input [ type_ "radio", name "size", onClick (ClickedSize size) ] []
         , text (sizeToString size)
+        ]
+
+
+viewFilter : String -> Int -> Html Msg
+viewFilter name magnitude =
+    div [ class "filter-slider" ]
+        [ label [] [ text name ]
+        , rangeSlider
+            [ Html.Attributes.max "11"
+            , Html.Attributes.property "val" (Encode.int magnitude)
+            ]
+            []
+        , label [] [ text (String.fromInt magnitude) ]
         ]
 
 
@@ -189,6 +208,11 @@ selectUrl url status =
 
         Errored errorMessage ->
             status
+
+
+rangeSlider : List (Attribute msg) -> List (Html msg) -> Html msg
+rangeSlider attributes children =
+    Html.node "range-slider" attributes children
 
 
 initialCmd : Cmd Msg
