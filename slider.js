@@ -14,7 +14,7 @@ class RangseSlider extends HTMLElement {
 
     jsr.addEventListener("update", function(elem, val) {
       var event = new CustomEvent ("slide", {
-        detail: {userSlidTo: value}
+        detail: {userSlidTo: val}
       })
       rangeSliderNode.dispatchEvent(event)
     })
