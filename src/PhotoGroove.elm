@@ -3,7 +3,7 @@ port module PhotoGroove exposing (main)
 import Array exposing (Array)
 import Browser
 import Browser.Dom exposing (Error)
-import Html exposing (Attribute, Html, button, div, h1, h3, img, input, label, p, small, text)
+import Html exposing (Attribute, Html, button, canvas, div, h1, h3, img, input, label, p, small, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (on, onClick)
 import Http
@@ -67,11 +67,7 @@ viewLoaded photos selectedImage model =
             (viewThumbnail selectedImage)
             photos
         )
-    , img
-        [ class "large"
-        , src (urlPrefix ++ "large/" ++ selectedImage)
-        ]
-        []
+    , canvas [ id "main-canvas", class "large" ] []
     ]
 
 
@@ -132,7 +128,7 @@ port setFilters : FilterOptions -> Cmd msg
 
 type alias FilterOptions =
     { url : String
-    , filters : List { name : String, amount : Int }
+    , filters : List { name : String, amount : Float }
     }
 
 
@@ -182,9 +178,9 @@ applyFilters model =
         Loaded photos selectedUrl ->
             let
                 filters =
-                    [ { name = "Hue", amount = model.hue }
-                    , { name = "Ripple", amount = model.ripple }
-                    , { name = "Noise", amount = model.noise }
+                    [ { name = "Hue", amount = toFloat model.hue / 11 }
+                    , { name = "Ripple", amount = toFloat model.ripple / 11 }
+                    , { name = "Noise", amount = toFloat model.noise / 11 }
                     ]
 
                 url =
@@ -239,13 +235,13 @@ update msg model =
             ( { model | status = Errored "Server Error !" }, Cmd.none )
 
         SlidHue hue ->
-            ( { model | hue = hue }, Cmd.none )
+            applyFilters { model | hue = hue }
 
         SlidRipple ripple ->
-            ( { model | ripple = ripple }, Cmd.none )
+            applyFilters { model | ripple = ripple }
 
         SlidNoise noise ->
-            ( { model | noise = noise }, Cmd.none )
+            applyFilters { model | noise = noise }
 
 
 selectUrl : String -> Status -> Status
