@@ -1,0 +1,32 @@
+{
+  "name": "Photo-Groove-Elm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "parcel index.html",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "fixed": "yarn fix:prettier",
+    "lint": "yarn lint:prettier"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/galanggg/photo-groove-elm.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/galanggg/photo-groove-elm/issues"
+  },
+  "homepage": "https://github.com/galanggg/photo-groove-elm#readme",
+  "dependencies": {
+    "elm-hot": "^1.1.5",
+    "node-elm-compiler": "^5.0.5"
+  },
+  "devDependencies": {
+    "parcel": "^2.0.0-beta.1",
+    "prettier": "^2.2.1",
+    "prettier-plugin-elm": "^0.7.0"
+  }
+}
